@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset='UTF-8'>
+		<title>evol</title>
+		<link rel='stylesheet' href='./semantic.min.css'>
+		<script src='./vue.min.js'></script>
+		<script src='./jquery.min.js'></script>
+		<script src='./semantic.min.js'></script>
+		<style>
+#app {
+	margin-top: 50px;
+}
+.mainTab {
+	text-align: center;
+}
+.field.customizeRangeField {
+	display: none;
+}
+		</style>
+	</head>
+
+	<body>
+		<div id='app' class='ui container'>
+			<div class='ui top attached tabular pointing secondary menu'>
+  				<div class='active item' data-tab='Show'>
+					<i class='icon tv'></i>
+					Show
+				</div>
+  				<div class='item' data-tab='Settings'>
+					<i class='icon cog'></i>
+					Settings
+				</div>
+  				<div class='item' data-tab='Preferences'>
+					<i class='icon edit'></i>
+					Preferences 
+				</div>
+			</div>
+			<div class='ui bottom attached active tab segment mainTab' data-tab='Show'>
+  				<h1 class="mainText" v-html="say"></h1>
+				<button class="ui labeled icon button" @click="changeSay">
+					<i class="icon sync"></i>
+					Refresh
+				</button>
+				<button class="ui labeled icon button" @click="stopToggle">
+					<i class="icon" :class="{ pause: isStop==0, 'play': isStop == 1 }"></i>
+					<span v-if="isStop == 0">Stop</span>
+					<span v-else>Play</span>
+				</button>
+				<div class="ui divider"></div>
+				<div class="ui statistic">
+					<div class="value">
+						{{ delayCounter|timize }}
+					</div>
+					<div class="label">
+						s切换
+					</div>
+				</div>
+				<div class="ui divider"></div>
+				<button class="ui circular info icon button" @click="$('.ui.basic.modal')
+  .modal('show')
+;">
+					<i class="info icon"></i>
+				</button>
+				<button class="ui circular facebook icon button">
+					<i class="facebook icon"></i>
+				</button>
+			</div>
+			<div class='ui bottom attached tab segment' data-tab='Settings'>
+  				<div class="ui form" style="width: 61.8%">
+					<div class="field">
+						<label>亲切的话语</label>
+						<div class="ui left icon input">
+  							<input type="text" placeholder="亲切的话语" v-model="word" @input="changeSay">
+  							<i class="pencil alternate icon"></i>
+						</div>
+					</div>
+					语法说明：用{{}}引用变量，me表示我，you表示你，teacher表示老师
+					<div class="field">
+						<label>时间间隔</label>
+						<div class="ui left icon input">
+  							<input type="text" placeholder="时间间隔" v-model="delayTimer">
+  							<i class="clock icon"></i>
+						</div>
+					</div>
+					<div class="field">
+						<label>“我”随机范围</label>
+						<div class="ui selection dropdown selectR1">
+							<input type="hidden" id="sr1" value=0>
+							<i class="dropdown icon"></i>
+							<div class="default text"></div>
+							<div class="scrollhint menu">
+								<div class="item" data-value="0"><i class="mars icon"></i>男</div>
+								<div class="item" data-value="1"><i class="venus icon"></i>女</div>
+								<div class="item" data-value="2"><i class="genderless icon"></i>其他</div>
+								<div class="item" data-value="3"><i class="venus mars icon"></i>全部</div>
+								<div class="item" data-value="4"><i class="edit icon"></i>自定义</div>
+							</div>
+						</div>
+					</div>
+					<div class="field customizeRangeField customizeRangeField1">
+						<select multiple="" class="ui fluid search dropdown customizeRange customizeRange1" @change="doCustom1" v-model="fakeCustomize1">
+							<option value="">自定义</option>
+						</select>
+					</div>
+					<div class="field">
+						<label>“你”随机范围</label>
+						<div class="ui selection dropdown selectR2">
+							<input type="hidden" id="sr1" value=0>
+							<i class="dropdown icon"></i>
+							<div class="default text"></div>
+							<div class="scrollhint menu">
+								<div class="item" data-value="0"><i class="mars icon"></i>男</div>
+								<div class="item" data-value="1"><i class="venus icon"></i>女</div>
+								<div class="item" data-value="2"><i class="genderless icon"></i>其他</div>
+								<div class="item" data-value="3"><i class="venus mars icon"></i>全部</div>
+								<div class="item" data-value="4"><i class="edit icon"></i>自定义</div>
+							</div>
+						</div>
+					</div>
+					<div class="field customizeRangeField customizeRangeField2">
+						<select multiple="" class="ui fluid search dropdown customizeRange customizeRange2" @change="doCustom2" v-model="fakeCustomize2">
+							<option value="">自定义</option>
+						</select>
+					</div>
+				</div>
+			</div>
+			<div class='ui bottom attached tab segment' data-tab='Preferences'>
+  				<div class="ui form" style="width: 61.8%">
+					<div class="field">
+						<label>Text Style</label>
+						<textarea v-model="mainTextStyle" @change="changeStyle"></textarea>
+					</div>
+					<div class="field">
+						<label>动画效果</label>
+						<select class="ui selection dropdown animate" v-model="animationSelect">
+							<option v-for="animation in animationSelects" :value="animation">{{ animation }}</option>
+						</select>
+					</div>
+					时间间隔<1s将不会显示动画
+				</div>
+			</div>
+		</div>
+		<div class="ui basic modal">
+			<div class="ui icon header">
+				<i class="info icon"></i>
+				About this project
+			</div>
+			<div class="content">
+				<p>A fun web that can 抽人。By yemaster(vt-dev-team)</p>
+				<p>Update at 10:25 2021/4/17</p>
+			</div>
+			<div class="actions">
+				<div class="ui green ok inverted button">
+					<i class="checkmark icon"></i>
+					Yes
+    				</div>
+			</div>
+		</div>
+		<script>
+let evol = new Vue({
+	el: '#app',
+	data: {
+		peel: Math.floor(Math.random()*2147483647),
+		word: '{{ me }}',
+		animationSelects: ['none', 'zoom', 'fade', 'fly down', 'jiggle', 'flash', 'shake', 'pulse', 'tada', 'bounce', 'glow'],
+		animationSelect: 'fade',
+		isStop: 0,
+		delayTimer: 5,
+		delayCounter: 500,
+		timer: '',
+		mainTextStyle: "{\n\t\"font-size\": \"80px\",\n\t\"font-weight\": \"300\",\n\t\"color\": \"#FF1493\"\n}",
+		say: 'Loading',
+		selectRange1: 0,
+		selectRange2: 0,
+		classmates: [{ name:'方备航', sex:0 },{ name:'方俊烨', sex:0 },{ name:'韩奇晔', sex:0 },{ name:'何思远', sex:0 },{ name:'蒋知玄', sex:0 },{ name:'潘天麟', sex:0 },{ name:'沈皓天', sex:0 },{ name:'沈珂宇', sex:0 },{ name:'施欣雨', sex:1 },{ name:'史文涛', sex:0 },{ name:'孙舒涵', sex:1 },{ name:'孙愉超', sex:2 },{ name:'王蔚东', sex:0 },{ name:'王星睿', sex:0 },{ name:'王子睿', sex:0 },{ name:'文杰', sex:0 },{ name:'闻人少栋', sex:0 },{ name:'肖智轩', sex:0 },{ name:'徐秉渊', sex:0 },{ name:'徐浩瑜', sex:0 },{ name:'徐乐骋', sex:0 },{ name:'徐旭雯', sex:1 },{ name:'徐熠', sex:1 },{ name:'杨若水', sex:1 },{ name:'叶力天', sex:0 },{ name:'应江滔', sex:0 },{ name:'余天阔', sex:0 },{ name:'俞博洋', sex:0 },{ name:'张哲', sex:0 },{ name:'章硕', sex:1 },{ name:'郑郭涵', sex:0 },{ name:'周信廷', sex:0 },{ name:'朱骓羽', sex:0 },{ name:'顾蛟泽', sex:0 },{ name:'岑俊逸', sex:0 }],
+		femaleClassmates: [{ name:'未知', sex:0 }],
+		maleClassmates: [{ name:'未知', sex:1 }],
+		otherClassmates: [{ name:'未知', sex:2 }],
+		customizeClassmates1: [{ name:'未知', sex:0 }],
+		customizeClassmates2: [{ name:'未知', sex:1 }],
+		fakeCustomize1: [],
+		fakeCustomize2: [],
+		teachers: ["张琪", "成则丰", "程载国", "李建标", "冯子江", "魏利群", "李兴贤", "汪高锋", "周铖昊", "曾杰", "黄幼丹", "朱康慈", "毛梦婷"]
+	},
+	mounted () {
+		let _this = this
+		_this.femaleClassmates = []
+		_this.maleClassmates = []
+		_this.otherClassmates = []
+		for (let i = 0; i < _this.classmates.length; ++i) {
+			if (_this.classmates[i].sex == 1)
+				_this.femaleClassmates.push(_this.classmates[i])
+			else if (_this.classmates[i].sex == 0)
+				_this.maleClassmates.push(_this.classmates[i])
+			else
+				_this.otherClassmates.push(_this.classmates[i])
+		}
+		_this.changeSay()
+		_this.changeStyle()
+		_this.timer = setInterval(_this.timeCount, 10)
+	},
+	beforeDestroy () {
+		clearInterval(this.timer)	
+	},
+	methods: {
+		rand () {
+			return this.peel=(214013*this.peel+2531011)%2147483647
+		},
+		stopToggle () {
+			this.isStop = 1 - this.isStop
+			if (this.isStop)
+				clearInterval(this.timer)
+			else
+				this.timer = setInterval(this.timeCount, 10)
+		},
+		changeStyle () {
+			try {
+				$('.mainText').css(JSON.parse(this.mainTextStyle))
+			}
+			catch(err) {
+				$('body')
+					.toast({
+						title: 'Oops!',
+						message: err.message,
+						showProgress: 'bottom',
+						classProgress: 'red',
+						class : 'red',
+						className: {
+							toast: 'ui message'
+						}
+					})
+				;
+			}
+		},
+		changeSay () {
+			try {
+			let _this = this
+			_this.delayCounter = _this.delayTimer * 100
+			let rand = _this.rand
+			let me, you
+			if (_this.delayTimer > 1 && _this.animationSelect != 'none') {
+				if (_this.animationSelect == 'zoom' || _this.animationSelect == 'fade' || _this.animationSelect == 'fly down')
+					$('.mainText').transition(_this.animationSelect + ' out')
+			}
+			if (this.selectRange1 == 1)
+				me = _this.femaleClassmates[rand() % _this.femaleClassmates.length].name
+			else if (this.selectRange1 == 0)
+				me = _this.maleClassmates[rand() % _this.maleClassmates.length].name
+			else if (this.selectRange1 == 2)
+				me = _this.otherClassmates[rand() % _this.otherClassmates.length].name
+			else if (this.selectRange1 == 3)
+				me = _this.classmates[rand() % _this.classmates.length].name
+			else if (this.selectRange1 == 4)
+				me = _this.customizeClassmates1[rand() % _this.customizeClassmates1.length].name
+			if (this.selectRange2 == 1)
+				you = _this.femaleClassmates[rand() % _this.femaleClassmates.length].name
+			else  if (_this.selectRange2 == 0)
+				you = _this.maleClassmates[rand() % _this.maleClassmates.length].name
+			else if (_this.selectRange2 == 2)
+				you = _this.otherClassmates[rand() % _this.otherClassmates.length].name
+			else if (_this.selectRange2 == 3)
+				you = _this.classmates[rand() % _this.classmates.length].name
+			else if (_this.selectRange2 == 4)
+				you = _this.customizeClassmates2[rand() % _this.customizeClassmates2.length].name
+			let teacher = _this.teachers[rand() % _this.teachers.length]
+			setTimeout(() => {
+				_this.say = _this.word
+				let rpm = _this.say.match(/{{[a-zA-Z0-9\+\-\*\s\/]*}}/g)
+				if (rpm != null)
+				for (let i = 0; i < rpm.length; ++i) {
+					let pt = rpm[i].replace('{','').replace('}','').trim()
+					_this.say = _this.say.replace(rpm[i], eval(pt))
+				}
+			}, 300)
+			if (_this.delayTimer > 1 && _this.animationSelect != 'none')
+				//$('.mainText').fadeIn(100)
+				$('.mainText').transition(_this.animationSelect)
+			}
+			catch(err) {
+				$('body')
+					.toast({
+						title: 'Oops!',
+						message: err.message,
+						showProgress: 'bottom',
+						classProgress: 'red',
+						class : 'red',
+						className: {
+							toast: 'ui message'
+						}
+					})
+				;
+			}
+		},
+		timeCount () {
+			let _this = this
+			if (_this.delayCounter > 0) {
+				--_this.delayCounter
+			}
+			else {
+				_this.changeSay()
+			}
+		},
+		doCustom1 () {
+			let _this = this
+			_this.customizeClassmates1 = []
+			for (let i = 0; i < _this.fakeCustomize1.length; ++i) {
+				let j, flag = 0;
+				for (j = 0; j < _this.classmates.length; ++j) {
+					if (_this.fakeCustomize1[i] == _this.classmates[j].name) {
+						flag = 1;
+						break;
+					}
+				}
+				if (!flag) {
+				$('body')
+					.toast({
+						title: 'Oops!',
+						message: 'Can\'t find '+_this.fakeCustomize1[i],
+						showProgress: 'bottom',
+						classProgress: 'red',
+						class : 'red',
+						className: {
+							toast: 'ui message'
+						}
+					})
+				;
+				}
+				_this.customizeClassmates1.push(_this.classmates[j])
+			}
+			if (_this.customizeClassmates1.length == 0)
+				_this.customizeClassmates1 = [{ name:'未知', sex:0 }]
+		},
+		doCustom2 () {
+			let _this = this
+			_this.customizeClassmates2 = []
+			for (let i = 0; i < _this.fakeCustomize2.length; ++i) {
+				let j, flag = 0;
+				for (j = 0; j < _this.classmates.length; ++j) {
+					if (_this.fakeCustomize2[i] == _this.classmates[j].name) {
+						flag = 1;
+						break;
+					}
+				}
+				if (!flag) {
+				$('body')
+					.toast({
+						title: 'Oops!',
+						message: 'Can\'t find '+_this.fakeCustomize2[i],
+						showProgress: 'bottom',
+						classProgress: 'red',
+						class : 'red',
+						className: {
+							toast: 'ui message'
+						}
+					})
+				;
+				}
+				_this.customizeClassmates2.push(_this.classmates[j])
+			}
+			if (_this.customizeClassmates2.length == 0)
+				_this.customizeClassmates2 = [{ name:'未知', sex:0 }]
+		}
+	},
+	filters: {
+		timize: function (value) {
+			return "" + Math.floor(value / 100) + "." + (value % 100 < 10? '0':'') + (value % 100)
+		}
+	}
+})
+$('.menu .item')
+	.tab()
+;
+$('.selectR1')
+	.dropdown({
+		onChange: function(value, text, $selectedItem) {
+			evol.selectRange1 = value
+			evol.changeSay()
+			if (value == 4) {
+				$('.customizeRangeField1').fadeIn()
+			}
+			else
+				
+				$('.customizeRangeField1').fadeOut()
+		}
+	})
+;
+$('.selectR2')
+	.dropdown({
+		onChange: function(value, text, $selectedItem) {
+			evol.selectRange2 = value
+			evol.changeSay()
+			if (value == 4) {
+				$('.customizeRangeField2').fadeIn()
+			}
+			else
+				
+				$('.customizeRangeField2').fadeOut()
+		}
+	})
+;
+for (let i = 0; i < evol.classmates.length; ++i) {
+	$('.ui.dropdown.customizeRange1').append($("<option></option>").val(evol.classmates[i].name).text(evol.classmates[i].name))
+	$('.ui.dropdown.customizeRange2').append($("<option></option>").val(evol.classmates[i].name).text(evol.classmates[i].name))
+}
+$('.ui.dropdown.customizeRange')
+	.dropdown()
+;
+$('select.ui.dropdown')
+	.dropdown()
+;
+		</script>
+	</body>
+</html>
